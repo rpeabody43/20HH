@@ -34,6 +34,7 @@ func printBanner() {
 
 func main() {
 	printBanner()
+	engine.Init()
 
 	reader := bufio.NewReader(os.Stdin)
 	for {

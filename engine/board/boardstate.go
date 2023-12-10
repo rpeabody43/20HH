@@ -1,146 +1,78 @@
 package board
 
 import (
-	"strings"
-	"unicode"
+	"20hh/engine/collections"
 )
+
+type Square = uint8
 
 // Used for values that store a single square index
 // i.e. en passant square when no en passant is possible
 const NoSq = -1
 
-// Piece indices
-const (
-	EmptySquare = 0
-	Pawn        = 1
-	Knight      = 2
-	Bishop      = 3
-	Rook        = 4
-	Queen       = 5
-	King        = 6
-)
+type SquareOrNone = int16
 
-// Color indices
-const (
-	White = 0
-	Black = 1
-)
-
-// Castle rights indices
-const (
-	K = 0
-	Q = 1
-	k = 2
-	q = 3
-)
+type Piece = uint8
 
 type Board struct {
-	pieceTypes  [7]Bitboard
-	colorPieces [2]Bitboard
+	// 1d array of what piece types are where
+	pieces [64]Piece
+
+	// Bitboard for each piece type
+	pieceBitboards [7]Bitboard
+	// Bitboard for each color
+	colorBitboards [2]Bitboard
 
 	whoseTurn int
 
-	castleRights [4]bool
+	castleRights uint8
 
-	enPassantSq int
+	enPassantSq SquareOrNone
 
 	halfMoveClock int // used for 50-move draw rule
-	fullMoveClock int
+	fullMoves     int
+
+	inCheck     bool
+	doubleCheck bool
+	checkMask   Bitboard
+
+	capturedPieces collections.ArrayStack[Piece]
+
+	rollbacks collections.ArrayStack[Rollback]
 }
 
-func squareIdx(rank, file int) int {
-	return rank*8 + file
-}
-
-func pieceNumFromLetter(pieceLetter rune) int {
-	switch pieceLetter {
-	case 'p':
-		return Pawn
-	case 'n':
-		return Knight
-	case 'b':
-		return Bishop
-	case 'r':
-		return Rook
-	case 'q':
-		return Queen
-	case 'k':
-		return King
-	default:
-		return EmptySquare
+// Doesn't set actual board state, just initializes data structures
+func NewBoard() Board {
+	return Board{
+		capturedPieces: collections.NewArrayStack[Piece](30),
+		rollbacks:      collections.NewArrayStack[Rollback](100),
 	}
 }
 
-func fromFEN(fen string) Board {
-	boardState := Board{}
-
-	fields := strings.Fields(fen)
-	ranks := strings.Split(fields[0], "/")
-
-	// Piece Placement
-	for rank, rankString := range ranks {
-		file := 0
-		for _, pieceLetter := range rankString {
-			if unicode.IsDigit(pieceLetter) {
-				emptyPiecesAmt := int(pieceLetter - '0')
-				file += emptyPiecesAmt
-			} else {
-				idx := squareIdx(rank, file)
-				piece := pieceNumFromLetter(unicode.ToLower(pieceLetter))
-				boardState.pieceTypes[piece].SetSquare(idx)
-
-				color := Black
-				if unicode.IsUpper(pieceLetter) {
-					color = White
-				}
-				boardState.colorPieces[color].SetSquare(idx)
-				file++
-			}
-		}
-	}
-
-	// Whose turn it is
-	if fields[1] == "w" {
-		boardState.whoseTurn = White
-	} else {
-		boardState.whoseTurn = Black
-	}
-
-	// Castling rights
-	if fields[2] != "-" {
-		for _, letter := range fields[2] {
-			castleIdx := 0
-			switch letter {
-			case 'K':
-				castleIdx = K
-			case 'Q':
-				castleIdx = Q
-			case 'k':
-				castleIdx = k
-			case 'q':
-				castleIdx = q
-			}
-			boardState.castleRights[castleIdx] = true
-		}
-	}
-
-	// En passant square
-	if fields[3] == "-" {
-		boardState.enPassantSq = NoSq
-	} else {
-		squareString := fields[3]
-		fileLetter := squareString[0]
-		rank := int(squareString[1])
-		boardState.enPassantSq = squareIdx(rank, int(fileLetter-'a'))
-	}
-
-	// Half & full move clocks
-	boardState.halfMoveClock = int(fields[4][0] - '0')
-	boardState.fullMoveClock = int(fields[5][0] - '0')
-
-	return boardState
+func squareIdx(rank, file uint8) Square {
+	return Square(rank*8 + file)
 }
 
-func fromStartPos() Board {
-	return fromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+func StartPos() Board {
+	return FromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
+}
+
+type Rollback struct {
+	castleRights  uint8
+	inCheck       bool
+	doubleCheck   bool
+	checkMask     Bitboard
+	enPassantSq   SquareOrNone
+	halfMoveClock int
+}
+
+func (board Board) Rollback() Rollback {
+	return Rollback{
+		castleRights:  board.castleRights,
+		inCheck:       board.inCheck,
+		doubleCheck:   board.doubleCheck,
+		checkMask:     board.checkMask,
+		enPassantSq:   board.enPassantSq,
+		halfMoveClock: board.halfMoveClock,
+	}
 }
