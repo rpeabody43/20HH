@@ -49,7 +49,7 @@ func NewBoard() Board {
 	}
 }
 
-func squareIdx(rank, file uint8) Square {
+func ConvertRankFile(rank, file uint8) Square {
 	return Square(rank*8 + file)
 }
 
@@ -75,4 +75,24 @@ func (board Board) Rollback() Rollback {
 		enPassantSq:   board.enPassantSq,
 		halfMoveClock: board.halfMoveClock,
 	}
+}
+
+func (board *Board) InCheck() bool {
+	return board.inCheck
+}
+
+func (board *Board) ColorBitboards() (Bitboard, Bitboard) {
+	return board.colorBitboards[White], board.colorBitboards[Black]
+}
+
+func (board *Board) PieceArray() *[64]Piece {
+	return &board.pieces
+}
+
+func (board *Board) WhiteToMove() bool {
+	return board.whoseTurn == White
+}
+
+func (board *Board) BlackToMove() bool {
+	return board.whoseTurn == Black
 }

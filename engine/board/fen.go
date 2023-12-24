@@ -39,7 +39,7 @@ func FromFEN(fen string) Board {
 				emptyPiecesAmt := uint8(pieceLetter - '0')
 				file += emptyPiecesAmt
 			} else {
-				idx := squareIdx(uint8(rank), file)
+				idx := ConvertRankFile(uint8(rank), file)
 				piece := pieceNumFromLetter(unicode.ToLower(pieceLetter))
 				boardState.pieceBitboards[piece].SetSquare(idx)
 				boardState.pieces[idx] = piece
@@ -86,7 +86,7 @@ func FromFEN(fen string) Board {
 		squareString := fields[3]
 		file := uint8(squareString[0] - 'a')
 		rank := uint8(squareString[1] - '1')
-		boardState.enPassantSq = SquareOrNone(squareIdx(rank, file))
+		boardState.enPassantSq = SquareOrNone(ConvertRankFile(rank, file))
 	}
 
 	// Half & full move clocks

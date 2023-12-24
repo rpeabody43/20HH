@@ -7,8 +7,8 @@ func (board *Board) UCIMakeMove(moveString string) {
 	endFile := uint8(moveString[2] - 'a')
 	endRank := uint8(moveString[3] - '1')
 
-	startSq := squareIdx(startRank, startFile)
-	endSq := squareIdx(endRank, endFile)
+	startSq := ConvertRankFile(startRank, startFile)
+	endSq := ConvertRankFile(endRank, endFile)
 	flag := NoFlag
 
 	var delta uint8
