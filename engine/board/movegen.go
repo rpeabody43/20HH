@@ -19,7 +19,7 @@ func (board *Board) addMove(moves *[218]Move, moveIdx *int,
 
 // Generates pseudo-legal moves
 // MakeMove undoes things like pins that aren't checked here
-func (board *Board) GenMoves() ([218]Move, int) {
+func (board *Board) GenMoves() ([]Move, int) {
 	var moves [218]Move
 	moveIdx := 0
 
@@ -51,7 +51,7 @@ func (board *Board) GenMoves() ([218]Move, int) {
 	}
 	// when in double check, only king moves are allowed
 	if board.doubleCheck {
-		return moves, moveIdx - 1
+		return moves[:moveIdx-1], moveIdx - 1
 	}
 
 	board.genCastleMoves(&moves, &moveIdx, friendlyKingSq, allPieces)
@@ -108,7 +108,7 @@ func (board *Board) GenMoves() ([218]Move, int) {
 		}
 	}
 
-	return moves, moveIdx - 1
+	return moves[:moveIdx-1], moveIdx - 1
 }
 
 func (board *Board) genCastleMoves(moves *[218]Move, moveIdx *int,

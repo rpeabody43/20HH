@@ -26,5 +26,5 @@ func (engine *Engine) PlayMoveFromUCI(moveString string) {
 }
 
 func (engine *Engine) GetBestMove() board.Move {
-	return search.RandomMove(&engine.currentBoard)
+	return search.BestMoveInPosition(&engine.currentBoard)
 }

@@ -206,16 +206,16 @@ func (board *Board) UndoMove(move Move) {
 
 	if movedPiece == King && move.HasFlag(Castle) {
 		queenside := move.HasFlag(QueenCastle)
-		rookStartIdx := rookStartIdx(queenside, board.whoseTurn)
-		rookEndIdx := rookCastleIdx(rookStartIdx)
+		rookStart := rookStartIdx(queenside, board.whoseTurn)
+		rookEnd := rookCastleIdx(rookStart)
 
-		board.pieces[rookStartIdx] = Rook
-		board.pieces[rookEndIdx] = 0
+		board.pieces[rookStart] = Rook
+		board.pieces[rookEnd] = 0
 
-		board.pieceBitboards[Rook].SetSquare(rookStartIdx)
-		friendlyBB.SetSquare(rookStartIdx)
-		board.pieceBitboards[Rook].ClearSquare(rookEndIdx)
-		friendlyBB.ClearSquare(rookEndIdx)
+		board.pieceBitboards[Rook].SetSquare(rookStart)
+		friendlyBB.SetSquare(rookStart)
+		board.pieceBitboards[Rook].ClearSquare(rookEnd)
+		friendlyBB.ClearSquare(rookEnd)
 	}
 
 	if board.whoseTurn == Black {

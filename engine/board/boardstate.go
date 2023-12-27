@@ -2,6 +2,8 @@ package board
 
 import (
 	"20hh/engine/collections"
+	"fmt"
+	"strings"
 )
 
 type Square = uint8
@@ -95,4 +97,23 @@ func (board *Board) WhiteToMove() bool {
 
 func (board *Board) BlackToMove() bool {
 	return board.whoseTurn == Black
+}
+
+func (board *Board) String() string {
+	out := ""
+	for row := 7; row >= 0; row-- {
+		out += fmt.Sprintf("%d ", row+1)
+		for col := 0; col < 8; col++ {
+			idx := ConvertRankFile(uint8(row), uint8(col))
+			pieceAtIdx := board.pieces[idx]
+			val := string(" PNBRQK"[pieceAtIdx])
+			if board.colorBitboards[Black].QuerySquare(idx) {
+				val = strings.ToLower(val)
+			}
+			out += fmt.Sprintf("[%s]", val)
+		}
+		out += "\n"
+	}
+	out += "   A  B  C  D  E  F  G  H "
+	return out
 }

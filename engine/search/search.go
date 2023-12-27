@@ -50,7 +50,8 @@ func search(b *board.Board, depth, alpha, beta int) int {
 			continue
 		}
 		legalMoves++
-		score := -search(b, depth-1, -alpha, -beta)
+		score := -search(b, depth-1, -beta, -alpha)
+		b.UndoMove(move)
 		if score >= beta {
 			return beta
 		} else if score > alpha {

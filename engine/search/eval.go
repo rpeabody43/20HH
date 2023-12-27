@@ -107,7 +107,7 @@ func evalPosition(b *board.Board) int {
 		idx := blackBB.PopLSB()
 		piece := pieceArray[idx]
 		blackScore += PIECE_VALUES[piece]
-		mirroredIdx := board.ConvertRankFile(8-idx/8, idx%8)
+		mirroredIdx := board.ConvertRankFile(7-idx/8, idx%8)
 		blackScore += PIECE_TABLES[piece][mirroredIdx]
 	}
 
