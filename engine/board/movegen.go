@@ -51,7 +51,7 @@ func (board *Board) GenMoves() ([]Move, int) {
 	}
 	// when in double check, only king moves are allowed
 	if board.doubleCheck {
-		return moves[:moveIdx-1], moveIdx - 1
+		return moves[:moveIdx], moveIdx
 	}
 
 	board.genCastleMoves(&moves, &moveIdx, friendlyKingSq, allPieces)
@@ -108,7 +108,7 @@ func (board *Board) GenMoves() ([]Move, int) {
 		}
 	}
 
-	return moves[:moveIdx-1], moveIdx - 1
+	return moves[:moveIdx], moveIdx
 }
 
 func (board *Board) genCastleMoves(moves *[218]Move, moveIdx *int,
