@@ -6,6 +6,7 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 )
 
@@ -34,6 +35,9 @@ func UCILoop() {
 		line, _ := reader.ReadString('\n')
 		// fmt.Println(line)
 		fields := strings.Fields(line)
+		if len(fields) == 0 {
+			continue
+		}
 		switch command := fields[0]; command {
 		case "uci":
 			initUCI()
@@ -46,9 +50,10 @@ func UCILoop() {
 		case "position":
 			state.positionCommand(line)
 		case "go":
-			state.goCommand(line)
+			// Spawn a thread so the search doesn't clog the UCI
+			go state.goCommand(line)
 		case "stop":
-			fmt.Printf("bestmove %s\n", state.engine.GetBestMove())
+			state.engine.EndSearch()
 		case "quit":
 			return
 		}
@@ -106,14 +111,34 @@ func (state *UCIState) positionCommand(command string) {
 }
 
 func (state *UCIState) goCommand(command string) {
-	// TODO handle b/wtime, b/winc, movestogo, nodes, depth, movetime
-	waitForStop := false
-	for _, field := range strings.Fields(command) {
+	// TODO handle  movestogo, depth, movetime
+	infinite := false
+	fields := strings.Fields(command)
+	timeRemaining := 60000 // 1 minute default
+	timeInc := 0
+	maxNodes := int((^uint(0)) >> 1)
+	whiteToMove := state.engine.currentBoard.WhiteToMove()
+	for idx, field := range fields {
 		if field == "infinite" {
-			waitForStop = true
+			infinite = true
+		} else if field == "nodes" {
+			maxNodes, _ = (strconv.Atoi(fields[idx+1]))
+		}
+		if whiteToMove {
+			if field == "wtime" {
+				timeRemaining, _ = strconv.Atoi(fields[idx+1])
+			} else if field == "winc" {
+				timeInc, _ = strconv.Atoi(fields[idx+1])
+			}
+		} else {
+			if field == "btime" {
+				timeRemaining, _ = strconv.Atoi(fields[idx+1])
+			} else if field == "binc" {
+				timeInc, _ = strconv.Atoi(fields[idx+1])
+			}
 		}
 	}
-	if !waitForStop {
-		fmt.Printf("bestmove %s\n", state.engine.GetBestMove())
-	}
+	fmt.Printf("bestmove %s\n",
+		state.engine.GetBestMove(timeRemaining, timeInc, maxNodes, infinite),
+	)
 }

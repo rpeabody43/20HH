@@ -94,6 +94,9 @@ var KING_ENDGAME = [64]int{
 func evalPosition(b *board.Board) int {
 	whiteBB, blackBB := b.ColorBitboards()
 	pieceArray := b.PieceArray()
+	if b.HalfMoveClock() >= 100 {
+		return 0
+	}
 	whiteScore := 0
 	for whiteBB > 0 {
 		idx := whiteBB.PopLSB()

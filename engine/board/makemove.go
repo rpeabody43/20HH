@@ -62,8 +62,9 @@ func (board *Board) UCIMakeMove(moveString string) {
 }
 
 // Returns false if the move is illegal
-func (board *Board) MakeMove(move Move) bool { // Used to reset if move is impossible
-	board.rollbacks.Push(board.Rollback())
+func (board *Board) MakeMove(move Move) bool {
+	rollback := board.rollback()
+	board.rollbacks.Push(rollback)
 
 	whoseTurn := board.whoseTurn
 
@@ -134,6 +135,7 @@ func (board *Board) MakeMove(move Move) bool { // Used to reset if move is impos
 	friendlyKingMask := *friendlyBB & board.pieceBitboards[King]
 	friendlyKingPos := friendlyKingMask.PopLSB()
 
+	board.halfMoves++
 	if whoseTurn == Black {
 		board.fullMoves++
 	}
@@ -150,6 +152,7 @@ func (board *Board) MakeMove(move Move) bool { // Used to reset if move is impos
 		return false
 	}
 	board.swapTurn()
+	board.updateHash(move, movingPiece, capturedPiece, rollback.castleRights)
 	return true
 }
 
@@ -218,6 +221,7 @@ func (board *Board) UndoMove(move Move) {
 		friendlyBB.ClearSquare(rookEnd)
 	}
 
+	board.halfMoves--
 	if board.whoseTurn == Black {
 		board.fullMoves--
 	}
@@ -228,4 +232,5 @@ func (board *Board) UndoMove(move Move) {
 	board.checkMask = rollback.checkMask
 	board.enPassantSq = rollback.enPassantSq
 	board.halfMoveClock = rollback.halfMoveClock
+	board.hash = rollback.hash
 }

@@ -89,11 +89,17 @@ func FromFEN(fen string) Board {
 		boardState.enPassantSq = SquareOrNone(ConvertRankFile(rank, file))
 	}
 
-	// Half & full move clocks
+	// Half & full moves
 	boardState.halfMoveClock = int(fields[4][0] - '0')
 	boardState.fullMoves = int(fields[5][0] - '0')
+	boardState.halfMoves = boardState.fullMoves * 2
+	if boardState.whoseTurn == Black {
+		boardState.halfMoves++
+	}
 
-	// TODO : Compute whether in check / other things
+	boardState.handleCheck()
+
+	boardState.genHash()
 
 	return boardState
 }

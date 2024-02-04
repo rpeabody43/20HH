@@ -1,9 +1,11 @@
 package board
 
 import (
-	"20hh/engine/collections"
 	"fmt"
 	"strings"
+
+	"20hh/engine/util"
+	"20hh/engine/util/collections"
 )
 
 type Square = uint8
@@ -15,6 +17,18 @@ const NoSq = -1
 type SquareOrNone = int16
 
 type Piece = uint8
+
+var initialized = false
+
+func Init() {
+	if initialized {
+		return
+	}
+	util.RandInit(1)
+	SetupTables()
+	ZobristInit()
+	initialized = true
+}
 
 type Board struct {
 	// 1d array of what piece types are where
@@ -33,14 +47,16 @@ type Board struct {
 
 	halfMoveClock int // used for 50-move draw rule
 	fullMoves     int
+	halfMoves     int
 
 	inCheck     bool
 	doubleCheck bool
 	checkMask   Bitboard
 
 	capturedPieces collections.ArrayStack[Piece]
+	rollbacks      collections.ArrayStack[Rollback]
 
-	rollbacks collections.ArrayStack[Rollback]
+	hash uint64
 }
 
 // Doesn't set actual board state, just initializes data structures
@@ -66,9 +82,10 @@ type Rollback struct {
 	checkMask     Bitboard
 	enPassantSq   SquareOrNone
 	halfMoveClock int
+	hash          uint64
 }
 
-func (board Board) Rollback() Rollback {
+func (board Board) rollback() Rollback {
 	return Rollback{
 		castleRights:  board.castleRights,
 		inCheck:       board.inCheck,
@@ -76,6 +93,7 @@ func (board Board) Rollback() Rollback {
 		checkMask:     board.checkMask,
 		enPassantSq:   board.enPassantSq,
 		halfMoveClock: board.halfMoveClock,
+		hash:          board.hash,
 	}
 }
 
@@ -97,6 +115,10 @@ func (board *Board) WhiteToMove() bool {
 
 func (board *Board) BlackToMove() bool {
 	return board.whoseTurn == Black
+}
+
+func (board *Board) HalfMoveClock() int {
+	return board.halfMoveClock
 }
 
 func (board *Board) String() string {

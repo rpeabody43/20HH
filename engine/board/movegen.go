@@ -19,7 +19,7 @@ func (board *Board) addMove(moves *[218]Move, moveIdx *int,
 
 // Generates pseudo-legal moves
 // MakeMove undoes things like pins that aren't checked here
-func (board *Board) GenMoves() ([]Move, int) {
+func (board *Board) GenMoves(capturesOnly bool) ([]Move, int) {
 	var moves [218]Move
 	moveIdx := 0
 
@@ -36,6 +36,9 @@ func (board *Board) GenMoves() ([]Move, int) {
 	friendlyKingSq := friendlyKingMask.PopLSB()
 	kingAttacks := KingAttacks[friendlyKingSq]
 	kingAttacks &^= friendlyBitboard
+	if capturesOnly {
+		kingAttacks &= enemyBitboard
+	}
 	for kingAttacks > 0 {
 		to := kingAttacks.PopLSB()
 		if board.squareAttacked(to, SquareOrNone(friendlyKingSq)) {
@@ -54,9 +57,11 @@ func (board *Board) GenMoves() ([]Move, int) {
 		return moves[:moveIdx], moveIdx
 	}
 
-	board.genCastleMoves(&moves, &moveIdx, friendlyKingSq, allPieces)
+	if !capturesOnly {
+		board.genCastleMoves(&moves, &moveIdx, friendlyKingSq, allPieces)
+	}
 
-	board.genPawnMoves(&moves, &moveIdx)
+	board.genPawnMoves(&moves, &moveIdx, capturesOnly)
 
 	// Knight moves
 	friendlyKnights := board.pieceBitboards[Knight] & friendlyBitboard
@@ -64,6 +69,9 @@ func (board *Board) GenMoves() ([]Move, int) {
 		from := friendlyKnights.PopLSB()
 		attacks := KnightAttacks[from]
 		attacks &^= friendlyBitboard
+		if capturesOnly {
+			attacks &= enemyBitboard
+		}
 		for attacks > 0 {
 			to := attacks.PopLSB()
 			flag := NoFlag
@@ -82,6 +90,9 @@ func (board *Board) GenMoves() ([]Move, int) {
 		from := friendlyOrthoPieces.PopLSB()
 		attacks := rookAttackBitboard(from, allPieces)
 		attacks &^= friendlyBitboard
+		if capturesOnly {
+			attacks &= enemyBitboard
+		}
 		for attacks > 0 {
 			to := attacks.PopLSB()
 			flag := NoFlag
@@ -98,6 +109,9 @@ func (board *Board) GenMoves() ([]Move, int) {
 		from := friendlyDiagPieces.PopLSB()
 		attacks := bishopAttackBitboard(from, allPieces)
 		attacks &^= friendlyBitboard
+		if capturesOnly {
+			attacks &= enemyBitboard
+		}
 		for attacks > 0 {
 			to := attacks.PopLSB()
 			flag := NoFlag
@@ -153,7 +167,7 @@ func (board *Board) genCastleMoves(moves *[218]Move, moveIdx *int,
 	}
 }
 
-func (board *Board) genPawnMoves(moves *[218]Move, moveIdx *int) {
+func (board *Board) genPawnMoves(moves *[218]Move, moveIdx *int, capturesOnly bool) {
 	whoseTurn := board.whoseTurn
 	friendlyBitboard := board.colorBitboards[whoseTurn]
 	enemyBitboard := board.colorBitboards[(whoseTurn+1)%2]
@@ -180,7 +194,10 @@ func (board *Board) genPawnMoves(moves *[218]Move, moveIdx *int) {
 		}
 		attacks &= enemies
 
-		allPawnMoves := quietMoves | attacks
+		allPawnMoves := attacks
+		if !capturesOnly {
+			allPawnMoves |= quietMoves
+		}
 		for allPawnMoves > 0 {
 			to := allPawnMoves.PopLSB()
 
