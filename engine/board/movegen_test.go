@@ -44,16 +44,16 @@ func (board *Board) perft(depth int, print bool) int {
 	}
 
 	nodes := 0
-	moves, movesCount := board.GenMoves()
-	for i := 0; i <= movesCount; i++ {
+	moves, _ := board.GenMoves(false)
+	for _, move := range moves {
 		if print {
-			fmt.Println(moves[i])
+			fmt.Println(move)
 		}
-		if !board.MakeMove(moves[i]) {
+		if !board.MakeMove(move) {
 			continue
 		}
 		nodes += board.perft(depth-1, print)
-		board.UndoMove(moves[i])
+		board.UndoMove(move)
 		if print {
 			fmt.Println("^")
 		}
@@ -64,7 +64,7 @@ func (board *Board) perft(depth int, print bool) int {
 
 func (board *Board) divide(depth int) int {
 	totalNodes := 0
-	moves, movesCount := board.GenMoves()
+	moves, movesCount := board.GenMoves(false)
 	for i := 0; i <= movesCount; i++ {
 		if !board.MakeMove(moves[i]) {
 			continue

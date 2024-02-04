@@ -4,17 +4,8 @@ import (
 	"testing"
 )
 
-var initialized = false
-
-func initialize() {
-	if !initialized {
-		SetupTables()
-		initialized = true
-	}
-}
-
 func TestBishopMoveMask(t *testing.T) {
-	initialize()
+	Init()
 	testD4 := BishopBlockerMasks[D4]
 	expectedD4 := Bitboard(0x40221400142200)
 	compareBitboard(t, testD4, expectedD4, "bishop D4 mask")
@@ -25,7 +16,7 @@ func TestBishopMoveMask(t *testing.T) {
 }
 
 func TestRookMoveMask(t *testing.T) {
-	initialize()
+	Init()
 
 	testD4 := RookBlockerMasks[D4]
 	expectedD4 := Bitboard(0x8080876080800)
@@ -37,7 +28,7 @@ func TestRookMoveMask(t *testing.T) {
 }
 
 func TestRookMovesFromBlockers(t *testing.T) {
-	initialize()
+	Init()
 
 	d4Blockers := Bitboard(0x808000082080000)
 	testD4 := rookMovesFromBlockers(D4, d4Blockers)
@@ -51,7 +42,7 @@ func TestRookMovesFromBlockers(t *testing.T) {
 }
 
 func TestBishopMovesFromBlockers(t *testing.T) {
-	initialize()
+	Init()
 
 	d4Blockers := Bitboard(0x41000000042000)
 	testD4 := bishopMovesFromBlockers(D4, d4Blockers)
@@ -65,7 +56,7 @@ func TestBishopMovesFromBlockers(t *testing.T) {
 }
 
 func TestRookMagics(t *testing.T) {
-	initialize()
+	Init()
 
 	d4Blockers := Bitboard(0x808000082080000) & RookBlockerMasks[D4]
 	index := (uint64(d4Blockers) * RookMagics[D4]) >> RookShifts[D4]
@@ -75,7 +66,7 @@ func TestRookMagics(t *testing.T) {
 }
 
 func TestBishopMagics(t *testing.T) {
-	initialize()
+	Init()
 
 	d4Blockers := Bitboard(0x41000000042000) & BishopBlockerMasks[D4]
 	index := (uint64(d4Blockers) * BishopMagics[D4]) >> BishopShifts[D4]

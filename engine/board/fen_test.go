@@ -71,6 +71,7 @@ func testOtherState(t *testing.T, whoseTurn int, castleRights uint8,
 }
 
 func TestStartPos(t *testing.T) {
+	SetupTables()
 	board := FromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1")
 
 	whitePiecesExpected := Bitboard(0xFFFF)
