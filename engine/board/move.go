@@ -34,6 +34,8 @@ const (
 	FlagMask = 0xF
 )
 
+const NullMove = Move(0)
+
 func NewMove(from, to Square, flag uint8) Move {
 	from16 := uint16(from)
 	toShifted := uint16(to) << 6

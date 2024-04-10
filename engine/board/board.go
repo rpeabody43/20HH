@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"20hh/engine/util"
 	"20hh/engine/util/collections"
 )
 
@@ -24,7 +23,6 @@ func Init() {
 	if initialized {
 		return
 	}
-	util.RandInit(1)
 	SetupTables()
 	ZobristInit()
 	initialized = true
@@ -56,7 +54,8 @@ type Board struct {
 	capturedPieces collections.ArrayStack[Piece]
 	rollbacks      collections.ArrayStack[Rollback]
 
-	hash uint64
+	hash            uint64
+	positionHistory [150]uint64 // used for repetitions
 }
 
 // Doesn't set actual board state, just initializes data structures
@@ -119,6 +118,18 @@ func (board *Board) BlackToMove() bool {
 
 func (board *Board) HalfMoveClock() int {
 	return board.halfMoveClock
+}
+
+func (board *Board) TotalHalfMoves() int {
+	return board.halfMoves
+}
+
+func (board *Board) Hash() uint64 {
+	return board.hash
+}
+
+func (board *Board) PosAtNthPly(ply int) uint64 {
+	return board.positionHistory[ply]
 }
 
 func (board *Board) String() string {

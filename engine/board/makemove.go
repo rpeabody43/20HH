@@ -153,6 +153,7 @@ func (board *Board) MakeMove(move Move) bool {
 	}
 	board.swapTurn()
 	board.updateHash(move, movingPiece, capturedPiece, rollback.castleRights)
+	board.positionHistory[board.halfMoves] = board.hash
 	return true
 }
 

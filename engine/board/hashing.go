@@ -8,7 +8,8 @@ import (
 var zVals struct {
 	pieceSquares   [768]uint64
 	castleRights   [16]uint64
-	enPassantFiles [8]uint64
+    // one for each file + empty
+	enPassantFiles [9]uint64 
 	blackToMove    uint64
 }
 
@@ -47,6 +48,8 @@ func (b *Board) genHash() {
 
 	if b.enPassantSq > -1 {
 		workingHash ^= zVals.enPassantFiles[b.enPassantSq%8]
+	} else {
+		workingHash ^= zVals.enPassantFiles[8]
 	}
 
 	if b.whoseTurn == Black {
@@ -84,13 +87,11 @@ func (b *Board) updateHash(m Move, moving, captured Piece, oldCastleRights uint8
 		newHash ^= zVals.enPassantFiles[file]
 	}
 
+	newHash ^= zVals.blackToMove
+
 	b.hash = newHash
 }
 
 func pieceNumIdx(sq Square, piece Piece, color int) int {
-	ret := int(sq)*12 + int(piece-1)*2
-	if color == Black {
-		ret++
-	}
-	return ret
+	return (int(sq)*12 + int(piece-1)*2) + color
 }

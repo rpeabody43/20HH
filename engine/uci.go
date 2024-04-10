@@ -17,11 +17,13 @@ type UCIState struct {
 func (state *UCIState) newEngineState() {
 	state.engine = Engine{}
 	state.engine.GameFromStartPos()
+	state.engine.ResetSearch()
 }
 
 func (state *UCIState) newEngineStateFromFEN(fen string) {
 	state.engine = Engine{}
 	state.engine.GameFromFENString(fen)
+	state.engine.ResetSearch()
 }
 
 func UCILoop() {
@@ -54,6 +56,10 @@ func UCILoop() {
 			go state.goCommand(line)
 		case "stop":
 			state.engine.EndSearch()
+		case "printboard":
+			fmt.Println(state.engine.currentBoard.String())
+		case "zobrist":
+			fmt.Printf("0x%x\n", state.engine.currentBoard.Hash())
 		case "quit":
 			return
 		}

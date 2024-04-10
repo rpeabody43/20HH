@@ -174,7 +174,9 @@ func (board *Board) genPawnMoves(moves *[218]Move, moveIdx *int, capturesOnly bo
 	allPieces := friendlyBitboard | enemyBitboard
 
 	promotionFlags := [4]uint8{
-		KnightPromo, BishopPromo, RookPromo, QueenPromo,
+		// Queen promo first so it gets prioritized
+		// over equivalent bishop / rook promo
+		QueenPromo, KnightPromo, BishopPromo, RookPromo,
 	}
 
 	friendlyPawns := board.pieceBitboards[Pawn] & friendlyBitboard

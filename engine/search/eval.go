@@ -5,7 +5,7 @@ import (
 )
 
 // PIECE VALUES
-var PIECE_VALUES = [...]int{
+var PIECE_VALUES = [...]int16{
 	0,
 	100,
 	320,
@@ -16,7 +16,8 @@ var PIECE_VALUES = [...]int{
 }
 
 // PIECE TABLES
-var PIECE_TABLES = [board.King + 1][64]int{
+// From black's perspective due to how bitboard indexes work
+var PIECE_TABLES = [board.King + 1][64]int16{
 	{},
 	{ // PAWN
 		0, 0, 0, 0, 0, 0, 0, 0,
@@ -91,27 +92,27 @@ var KING_ENDGAME = [64]int{
 	-50, -30, -30, -30, -30, -30, -30, -50,
 }
 
-func evalPosition(b *board.Board) int {
+func evalPosition(b *board.Board) int16 {
 	whiteBB, blackBB := b.ColorBitboards()
 	pieceArray := b.PieceArray()
 	if b.HalfMoveClock() >= 100 {
 		return 0
 	}
-	whiteScore := 0
+	whiteScore := int16(0)
 	for whiteBB > 0 {
 		idx := whiteBB.PopLSB()
 		piece := pieceArray[idx]
 		whiteScore += PIECE_VALUES[piece]
-		whiteScore += PIECE_TABLES[piece][idx]
+		mirroredIdx := board.ConvertRankFile(7-idx/8, idx%8)
+		whiteScore += PIECE_TABLES[piece][mirroredIdx]
 	}
 
-	blackScore := 0
+	blackScore := int16(0)
 	for blackBB > 0 {
 		idx := blackBB.PopLSB()
 		piece := pieceArray[idx]
 		blackScore += PIECE_VALUES[piece]
-		mirroredIdx := board.ConvertRankFile(7-idx/8, idx%8)
-		blackScore += PIECE_TABLES[piece][mirroredIdx]
+		blackScore += PIECE_TABLES[piece][idx]
 	}
 
 	if b.BlackToMove() {
@@ -119,4 +120,17 @@ func evalPosition(b *board.Board) int {
 	} else {
 		return whiteScore - blackScore
 	}
+}
+
+// Determine if this position has been played already
+func IsRepetition(b *board.Board) bool {
+	start := b.TotalHalfMoves() - b.HalfMoveClock()
+	hash := b.Hash()
+	for i := start; i < b.TotalHalfMoves(); i++ {
+		if b.PosAtNthPly(i) == hash {
+			return true
+		}
+	}
+
+	return false
 }

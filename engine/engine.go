@@ -5,15 +5,23 @@ import (
 
 	"20hh/engine/board"
 	"20hh/engine/search"
+	"20hh/engine/util"
 )
 
 type Engine struct {
 	currentBoard board.Board
 	search       search.Searcher
+	ttSizeMb     uint16
 }
 
 func Init() {
+	util.RandInit(0xfdfc7fd283aac769)
 	board.Init()
+}
+
+func (engine *Engine) ResetSearch() {
+	engine.ttSizeMb = 1024 // TODO fix with a UCI opt
+	engine.search.Init(engine.ttSizeMb)
 }
 
 func (engine *Engine) GameFromFENString(fen string) {
