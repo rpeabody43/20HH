@@ -2,3 +2,5 @@
 *.swp
 
 builds/
+logs/
+testing/
