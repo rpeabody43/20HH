@@ -11,25 +11,9 @@ import (
 	"strings"
 )
 
-type UCIState struct {
-	engine Engine
-}
-
-func (state *UCIState) newEngineState() {
-	state.engine = Engine{}
-	state.engine.GameFromStartPos()
-	state.engine.ResetSearch()
-}
-
-func (state *UCIState) newEngineStateFromFEN(fen string) {
-	state.engine = Engine{}
-	state.engine.GameFromFENString(fen)
-	state.engine.ResetSearch()
-}
-
 func UCILoop() {
 	board.SetupTables()
-	state := UCIState{}
+	var engine Engine
 	initUCI()
 
 	reader := bufio.NewReader(os.Stdin)
@@ -47,20 +31,22 @@ func UCILoop() {
 		case "isready":
 			fmt.Println("readyok")
 		case "setoption":
-			state.setOption(fields[2:])
+			setOption(&engine, fields[2:])
 		case "ucinewgame":
-			state.newEngineState()
+			engine = Engine{}
+			engine.GameFromStartPos()
+			engine.ResetSearch()
 		case "position":
-			state.positionCommand(line)
+			positionCommand(&engine, line)
 		case "go":
 			// Spawn a thread so the search doesn't clog the UCI
-			go state.goCommand(line)
+			go goCommand(&engine, line)
 		case "stop":
-			state.engine.EndSearch()
+			engine.EndSearch()
 		case "printboard":
-			fmt.Println(state.engine.currentBoard.String())
+			fmt.Println(engine.currentBoard.String())
 		case "zobrist":
-			fmt.Printf("0x%x\n", state.engine.currentBoard.Hash())
+			fmt.Printf("0x%x\n", engine.currentBoard.Hash())
 		case "quit":
 			return
 		}
@@ -75,7 +61,7 @@ func initUCI() {
 	fmt.Println("uciok")
 }
 
-func (state *UCIState) setOption(fields []string) {
+func setOption(engine *Engine, fields []string) {
 	parsingValue := false
 	optionName := ""
 	optionVal := ""
@@ -94,17 +80,17 @@ func (state *UCIState) setOption(fields []string) {
 	optionVal = optionVal[:len(optionVal)-1]
 }
 
-func (state *UCIState) positionCommand(command string) {
+func positionCommand(engine *Engine, command string) {
 	command = strings.TrimPrefix(command, "position ")
 	if strings.HasPrefix(command, "fen") {
 		command = strings.TrimPrefix(command, "fen ")
 		fields := strings.Fields(command)
 		fenString := strings.Join(fields[:6], " ")
-		state.engine.GameFromFENString(fenString)
+		engine.GameFromFENString(fenString)
 		command = strings.Join(fields[6:], " ")
 	} else if strings.HasPrefix(command, "startpos") {
 		command = strings.TrimPrefix(command, "startpos ")
-		state.engine.GameFromStartPos()
+		engine.GameFromStartPos()
 	}
 
 	if !strings.HasPrefix(command, "moves") {
@@ -113,18 +99,18 @@ func (state *UCIState) positionCommand(command string) {
 	command = strings.TrimPrefix(command, "moves ")
 	moveStrings := strings.Fields(command)
 	for _, moveString := range moveStrings {
-		state.engine.PlayMoveFromUCI(moveString)
+		engine.PlayMoveFromUCI(moveString)
 	}
 }
 
-func (state *UCIState) goCommand(command string) {
-	// TODO handle  movestogo, depth, movetime
+func goCommand(engine *Engine, command string) {
+	// TODO handle movestogo, depth, movetime
 	infinite := false
 	fields := strings.Fields(command)
 	timeRemaining := 60000 // 1 minute default
 	timeInc := 0
 	maxNodes := int((^uint(0)) >> 1)
-	whiteToMove := state.engine.currentBoard.WhiteToMove()
+	whiteToMove := engine.currentBoard.WhiteToMove()
 	for idx, field := range fields {
 		if field == "infinite" {
 			infinite = true
@@ -153,7 +139,7 @@ func (state *UCIState) goCommand(command string) {
 		infinite,
 	}
 	fmt.Printf("bestmove %s\n",
-		state.engine.GetBestMove(opts, printInfo),
+		engine.GetBestMove(opts, printInfo),
 	)
 }
 

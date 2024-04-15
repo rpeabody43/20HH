@@ -23,7 +23,7 @@ type Searcher struct {
 	tt TranspositionTable
 }
 
-func (s *Searcher) Init(ttSizeMb uint16) {
+func (s *Searcher) Reset(ttSizeMb uint16) {
 	s.tt = NewTT(ttSizeMb)
 }
 

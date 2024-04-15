@@ -24,7 +24,7 @@ func Init() {
 
 func (engine *Engine) ResetSearch() {
 	engine.ttSizeMb = 1024 // TODO fix with a UCI opt
-	engine.search.Init(engine.ttSizeMb)
+	engine.search.Reset(engine.ttSizeMb)
 }
 
 func (engine *Engine) GameFromFENString(fen string) {
