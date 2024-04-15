@@ -8,6 +8,9 @@ import (
 	"20hh/engine/util"
 )
 
+// I don't like how this file is a lot of 1 line functions - seems like a lot
+// of useless encapsulation but doing it this way makes logical sense
+
 type Engine struct {
 	currentBoard board.Board
 	search       search.Searcher
@@ -40,24 +43,34 @@ func (engine *Engine) EndSearch() {
 	engine.search.CancelSearch()
 }
 
+type SearchOpts struct {
+	timeRemaining int
+	timeInc       int
+	maxNodes      int
+	infiniteTime  bool
+}
+
 func (engine *Engine) GetBestMove(
-	timeRemaining, timeInc, maxNodes int, infiniteTime bool,
+	opts SearchOpts, loggingCallback search.LogCallback,
 ) board.Move {
 	moveChan := make(chan board.Move)
-	moveTime := timeRemaining/40 + timeInc/2
+	moveTime := opts.timeRemaining/40 + opts.timeInc/2
 
 	// Spawn a search thread
-	go engine.search.StartSearch(&engine.currentBoard, moveChan, maxNodes)
-	if infiniteTime || maxNodes < int((^uint(0))>>1) {
-		// If infiniteTime is true, EndSearch() is called by passing "stop" to UCI
-		// or if the engine hits its max nodes
-		// Wait for the search thread to finish up
+	go engine.search.StartSearch(&engine.currentBoard, moveChan,
+		loggingCallback, opts.maxNodes)
+
+	// If infinite time is enabled, search stops when UCI tells it to
+	// If a node limit is enabled, the search stops when it reaches max nodes
+	// Either way wait on the search to return a move
+	if opts.infiniteTime || opts.maxNodes < int((^uint(0))>>1) {
 		return <-moveChan
 	}
 	// wait for it to either end on its own or cancel it when time runs out
 	select {
 	case bestMove := <-moveChan:
 		return bestMove
+
 	case <-time.After(time.Duration(moveTime) * time.Millisecond):
 		engine.search.CancelSearch()
 		return <-moveChan

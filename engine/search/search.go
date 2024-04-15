@@ -1,7 +1,6 @@
 package search
 
 import (
-	"fmt"
 	"time"
 
 	"20hh/engine/board"
@@ -28,42 +27,27 @@ func (s *Searcher) Init(ttSizeMb uint16) {
 	s.tt = NewTT(ttSizeMb)
 }
 
-func (s *Searcher) printInfo(depth uint8, score int16, elapsed uint64, pv *[15]board.Move) {
-	nps := float64(s.totalNodesSearched*1000) / float64(elapsed)
-	if elapsed == 0 {
-		nps = float64(s.totalNodesSearched)
-	}
-
-	// Format score
-	scoreString := fmt.Sprintf("cp %d", score)
-	if score > CHECKMATE_EVAL {
-		plies := INFINITY - score
-		mateIn := (plies / 2) + (plies % 2)
-		scoreString = fmt.Sprintf("mate %d", mateIn)
-	} else if score < -CHECKMATE_EVAL {
-		plies := NEG_INFINITY - score
-		mateIn := (plies / 2) + (plies % 2)
-		scoreString = fmt.Sprintf("mate %d", mateIn)
-	}
-
-	// Format principle variation
-	pvString := ""
-	for i := 0; i < 15 && pv[i] != board.NullMove; i++ {
-		pvString += fmt.Sprintf(" %s", pv[i])
-	}
-
-	fmt.Printf(
-		"info depth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n",
-		depth, scoreString, s.totalNodesSearched, uint64(nps), elapsed,
-		s.tt.PermillFull(), pvString,
-	)
-}
-
 func (s *Searcher) CancelSearch() {
 	s.searchCancelled = true
 }
 
-func (s *Searcher) StartSearch(b *board.Board, out chan board.Move, maxNodes int) {
+// Incremental search information at each depth
+type SearchLog struct {
+	Depth          uint8
+	Score          int16
+	CheckmateScore bool
+	Elapsed        uint64
+	PV             *[15]board.Move
+	TotalNodes     int
+	NPS            float64
+	TTPermillFull  uint16
+}
+
+// Function for displaying SearchLogs (via UCI or otherwise)
+type LogCallback func(SearchLog)
+
+func (s *Searcher) StartSearch(b *board.Board, out chan board.Move,
+	callback LogCallback, maxNodes int) {
 	s.searchCancelled = false
 	s.totalNodesSearched = 0
 	s.maxNodes = maxNodes
@@ -74,6 +58,7 @@ func (s *Searcher) StartSearch(b *board.Board, out chan board.Move, maxNodes int
 	for searchDepth := uint8(1); searchDepth <= 255; searchDepth++ {
 		s.searchedOneMove = false
 
+		// RUN SEARCH AT SELECTED DEPTH
 		timeStarted := time.Now()
 		evalAtDepth := s.search(b, NEG_INFINITY, INFINITY, searchDepth, 0)
 		timeSearchingMs += uint64(time.Since(timeStarted).Milliseconds())
@@ -84,14 +69,47 @@ func (s *Searcher) StartSearch(b *board.Board, out chan board.Move, maxNodes int
 			eval = evalAtDepth
 		}
 		s.tt.UpdatePVLine(b, &pvLine)
-		s.printInfo(searchDepth, eval, timeSearchingMs, &pvLine)
+
+		// OUTPUT SEARCH DATA
+		// eval is raw evaluation number, score is formatted for mates, etc.
+		score := eval
+		checkmateScore := false
+		// If mate evaluation, format score as number of moves to go
+		if eval > CHECKMATE_EVAL {
+			checkmateScore = true
+			plies := INFINITY - score
+			score = (plies / 2) + (plies % 2)
+		} else if eval < -CHECKMATE_EVAL {
+			checkmateScore = true
+			plies := NEG_INFINITY - score
+			score = (plies / 2) + (plies % 2)
+		}
+
+		nps := float64(s.totalNodesSearched*1000) / float64(timeSearchingMs)
+		if timeSearchingMs == 0 {
+			nps = float64(s.totalNodesSearched)
+		}
+
+		callback(SearchLog{
+			searchDepth,
+			score,
+			checkmateScore,
+			timeSearchingMs,
+			&pvLine,
+			s.totalNodesSearched,
+			nps,
+			s.tt.PermillFull(),
+		})
+
+		// BREAK OUT OF SEARCH
 		if s.searchCancelled {
 			break
 		}
-		// If a checkmate or there's one legal move stop here
+		// If a checkmate stop here
 		if eval > CHECKMATE_EVAL || eval < -CHECKMATE_EVAL {
 			break
 		}
+		// TODO early exit if there's one legal move
 	}
 
 	out <- pvLine[0]

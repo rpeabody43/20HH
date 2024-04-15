@@ -2,6 +2,7 @@ package engine
 
 import (
 	"20hh/engine/board"
+	"20hh/engine/search"
 
 	"bufio"
 	"fmt"
@@ -144,7 +145,35 @@ func (state *UCIState) goCommand(command string) {
 			}
 		}
 	}
+
+	opts := SearchOpts{
+		timeRemaining,
+		timeInc,
+		maxNodes,
+		infinite,
+	}
 	fmt.Printf("bestmove %s\n",
-		state.engine.GetBestMove(timeRemaining, timeInc, maxNodes, infinite),
+		state.engine.GetBestMove(opts, printInfo),
+	)
+}
+
+// Print incremental updates to UCI
+func printInfo(log search.SearchLog) {
+	// Format principle variation
+	pvString := ""
+	for i := 0; i < 15 && log.PV[i] != board.NullMove; i++ {
+		pvString += fmt.Sprintf(" %s", log.PV[i])
+	}
+
+	// Format score display
+	scoreString := fmt.Sprintf("cp %d", log.Score)
+	if log.CheckmateScore {
+		scoreString = fmt.Sprintf("mate %d", log.Score)
+	}
+
+	fmt.Printf(
+		"info depth %d score %s nodes %d nps %d time %d hashfull %d pv%s\n",
+		log.Depth, scoreString, log.TotalNodes, uint64(log.NPS),
+		log.Elapsed, log.TTPermillFull, pvString,
 	)
 }
