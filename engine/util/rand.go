@@ -11,6 +11,12 @@ func rotate(x uint64, k int) uint64 {
 	return (((x) << (k)) | ((x) >> (64 - (k))))
 }
 
+// Used for magic bitboards
+// Numbers have a better chance at "magic" if they don't have many set bits
+func SparseRandU64() uint64 {
+	return RandU64() & RandU64() & RandU64()
+}
+
 func RandU64() uint64 {
 	e := randCtx.a - rotate(randCtx.b, 7)
 	randCtx.a = randCtx.b ^ rotate(randCtx.c, 13)

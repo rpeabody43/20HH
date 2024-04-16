@@ -1,9 +1,14 @@
 package board
 
 import (
+	"20hh/engine/util"
+
 	"fmt"
-	"math/rand"
 )
+
+// THE ONLY THING THAT MATTERS IN THIS FILE ARE THE HARDCODED MAGIC
+// NUMBERS AND THE METHODS THAT SET UP THE ROOK AND BISHOP TABLES
+// The rest is to generate magics which I only needed to do once lol
 
 var RookMagics = [64]uint64{
 	0x0600110040a20080, 0x0006043008204028, 0x0100042000084010, 0x1200021040582104,
@@ -65,10 +70,6 @@ var BishopShifts = [64]uint8{
 	0x58, 0x59, 0x59, 0x59, 0x59, 0x59, 0x59, 0x58,
 }
 
-func sparseRandInt() uint64 {
-	return rand.Uint64() & rand.Uint64() & rand.Uint64()
-}
-
 func findMagicAtSq(sq Square, rook bool) (uint64, []Bitboard) {
 	blockerMask := RookBlockerMasks[sq]
 	if !rook {
@@ -86,7 +87,7 @@ func findMagicAtSq(sq Square, rook bool) (uint64, []Bitboard) {
 	var magic uint64
 	attacksTable := make([]Bitboard, 1<<numBlockerBits)
 	for !foundNum {
-		magic = sparseRandInt()
+		magic = util.SparseRandU64()
 		foundNum = true
 
 		for _, perm := range permutations {
