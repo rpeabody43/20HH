@@ -63,6 +63,14 @@ func (board *Board) UCIMakeMove(moveString string) {
 
 // Returns false if the move is illegal
 func (board *Board) MakeMove(move Move) bool {
+	// Need to save this to update hash
+	// The position hash only uses the en passant
+	// square if there there was a nearby pawn
+	hashedEPSq := NoSq
+	if board.enPassantPossible() {
+		hashedEPSq = board.enPassantSq
+	}
+
 	rollback := board.rollback()
 	board.rollbacks.Push(rollback)
 
@@ -122,7 +130,8 @@ func (board *Board) MakeMove(move Move) bool {
 		board.updateCastleRights(from, to)
 	}
 
-	if movingPiece == Pawn && move.HasFlag(DblPawnMove) && !isEnPassant {
+	if movingPiece == Pawn && !isEnPassant &&
+		!move.HasFlag(Promotion) && move.HasFlag(DblPawnMove) {
 		board.enPassantSq = SquareOrNone(from - 8)
 		if board.whoseTurn == White {
 			board.enPassantSq = SquareOrNone(from + 8)
@@ -152,7 +161,8 @@ func (board *Board) MakeMove(move Move) bool {
 		return false
 	}
 	board.swapTurn()
-	board.updateHash(move, movingPiece, capturedPiece, rollback.castleRights)
+	board.updateHash(move, movingPiece, capturedPiece,
+		rollback.castleRights, hashedEPSq)
 	board.positionHistory[board.halfMoves] = board.hash
 	return true
 }

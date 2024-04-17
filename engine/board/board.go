@@ -11,7 +11,7 @@ type Square = uint8
 
 // Used for values that store a single square index
 // i.e. en passant square when no en passant is possible
-const NoSq = -1
+const NoSq = SquareOrNone(-1)
 
 type SquareOrNone = int16
 
@@ -24,7 +24,9 @@ func Init() {
 		return
 	}
 	SetupTables()
-	ZobristInit()
+	// Would generate random numbers for zobrist hashing,
+	// but they are now hardcoded so not needed
+	// ZobristInit()
 	initialized = true
 }
 
